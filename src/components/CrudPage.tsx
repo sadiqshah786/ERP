@@ -115,14 +115,14 @@ export function CrudPage({ config }: { config: EntityConfig }) {
           <h2 className="text-xl font-bold">{config.title}</h2>
           {config.description && <p className="text-sm text-muted-foreground">{config.description}</p>}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-56">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="w-56 pl-8" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input className="w-full pl-8" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Button variant="outline" onClick={print} disabled={!filtered.length} title="Print"><Printer className="h-4 w-4" /></Button>
           <Button variant="outline" onClick={exportCsv} disabled={!filtered.length}><Download className="h-4 w-4" /> Export</Button>
-          <Button onClick={openNew}><Plus className="h-4 w-4" /> Add {config.singular}</Button>
+          <Button className="flex-1 sm:flex-none" onClick={openNew}><Plus className="h-4 w-4" /> Add {config.singular}</Button>
         </div>
       </div>
 

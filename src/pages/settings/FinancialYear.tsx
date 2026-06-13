@@ -74,7 +74,7 @@ export default function FinancialYear() {
           <h2 className="text-2xl font-extrabold tracking-tight">Financial Years</h2>
           <p className="text-sm text-muted-foreground">Manage your accounting periods. Only one financial year can be active at a time.</p>
         </div>
-        <Button onClick={() => open(null)}><Plus className="h-4 w-4" /> New Financial Year</Button>
+        <Button className="w-full sm:w-auto" onClick={() => open(null)}><Plus className="h-4 w-4" /> New Financial Year</Button>
       </div>
 
       {active && (

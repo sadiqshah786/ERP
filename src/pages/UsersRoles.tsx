@@ -126,14 +126,14 @@ function HeaderActions({ tab, onAddUser, onRepair, onCreateRole }: {
 }) {
   const [repairing, setRepairing] = useState(false);
   if (tab === "users") {
-    return <Button onClick={onAddUser}><UserPlus className="h-4 w-4" /> Add User</Button>;
+    return <Button className="w-full sm:w-auto" onClick={onAddUser}><UserPlus className="h-4 w-4" /> Add User</Button>;
   }
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="secondary" disabled={repairing} onClick={async () => { setRepairing(true); try { await onRepair(); } finally { setRepairing(false); } }}>
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+      <Button variant="secondary" className="flex-1 sm:flex-none" disabled={repairing} onClick={async () => { setRepairing(true); try { await onRepair(); } finally { setRepairing(false); } }}>
         {repairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />} Repair Permissions
       </Button>
-      <Button onClick={onCreateRole}><Plus className="h-4 w-4" /> Create Role</Button>
+      <Button className="flex-1 sm:flex-none" onClick={onCreateRole}><Plus className="h-4 w-4" /> Create Role</Button>
     </div>
   );
 }
