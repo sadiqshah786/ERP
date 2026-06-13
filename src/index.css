@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Memon Solutions brand — primary #0a8dc7 (blue), secondary #9ed24d (green) */
+    --primary: 198 90% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 84 60% 56%;
+    --secondary-foreground: 95 40% 16%;
+    --muted: 210 16% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 198 78% 94%;
+    --accent-foreground: 198 90% 32%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 84 60% 45%;
+    --warning: 38 92% 50%;
+
+    --border: 214 18% 90%;
+    --input: 214 18% 90%;
+    --ring: 198 90% 41%;
+
+    /* Sidebar uses the primary blue */
+    --sidebar: 198 89% 40%;
+    --sidebar-foreground: 200 100% 92%;
+    --sidebar-accent: 201 96% 27%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 30% 8%;
+    --foreground: 210 20% 92%;
+    --card: 222 28% 11%;
+    --card-foreground: 210 20% 92%;
+    --popover: 222 28% 11%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 198 88% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 84 35% 30%;
+    --secondary-foreground: 84 55% 85%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 215 16% 62%;
+    --accent: 198 60% 22%;
+    --accent-foreground: 198 80% 82%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 84 55% 50%;
+    --warning: 38 92% 55%;
+
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 198 88% 48%;
+
+    /* Deeper blue sidebar in dark mode */
+    --sidebar: 202 72% 16%;
+    --sidebar-foreground: 200 40% 80%;
+    --sidebar-accent: 198 82% 34%;
+  }
+
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@layer utilities {
+  .glass { @apply bg-white/80 backdrop-blur-md; }
+  .card-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06); }
+  .card-shadow-lg { box-shadow: 0 10px 30px -12px rgba(0,0,0,0.15); }
+}
