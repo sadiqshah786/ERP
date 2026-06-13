@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Search, Inbox, Download, Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
 import { EntityConfig } from "@/lib/schemas";
-import { Doc, subscribe, createDoc, updateDocById, deleteDocById } from "@/lib/store";
+import { Doc, listDocs, createDoc, updateDocById, deleteDocById } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { exportToCsv } from "@/lib/export";
 import { printTable } from "@/lib/print";
@@ -27,15 +28,23 @@ export function CrudPage({ config }: { config: EntityConfig }) {
   const [editing, setEditing] = useState<Doc | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [toDelete, setToDelete] = useState<Doc | null>(null);
+
+  // Load the listing from the API; re-called after every mutation.
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRows(await listDocs(config.collection));
+    } catch (err: any) {
+      toast({ title: "Could not load records", description: err?.message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }, [config.collection]);
 
   useEffect(() => {
-    setLoading(true);
-    const unsub = subscribe(config.collection, (r) => {
-      setRows(r);
-      setLoading(false);
-    });
-    return unsub;
-  }, [config.collection]);
+    load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return rows;
@@ -71,6 +80,7 @@ export function CrudPage({ config }: { config: EntityConfig }) {
         await createDoc(config.collection, payload);
         toast({ title: `${config.singular} created`, type: "success" });
       }
+      await load(); // re-fetch the listing
       setOpen(false);
     } catch (err: any) {
       toast({ title: "Save failed", description: err?.message, type: "error" });
@@ -79,9 +89,10 @@ export function CrudPage({ config }: { config: EntityConfig }) {
     }
   };
 
-  const remove = async (row: Doc) => {
-    if (!confirm(`Delete this ${config.singular.toLowerCase()}?`)) return;
-    await deleteDocById(config.collection, row.id);
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    await deleteDocById(config.collection, toDelete.id);
+    await load(); // re-fetch the listing
     toast({ title: `${config.singular} deleted`, type: "success" });
   };
 
@@ -156,7 +167,7 @@ export function CrudPage({ config }: { config: EntityConfig }) {
                   ))}
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(row)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(row)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setToDelete(row)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -210,6 +221,15 @@ export function CrudPage({ config }: { config: EntityConfig }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(v) => !v && setToDelete(null)}
+        title={`Delete ${config.singular.toLowerCase()}?`}
+        description={`“${toDelete?.[config.columns[0].key] ?? "This record"}” will be permanently removed. This action cannot be undone.`}
+        confirmLabel={`Delete ${config.singular}`}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

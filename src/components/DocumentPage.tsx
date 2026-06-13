@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, FileText, Search, X, Printer, Pencil, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
 import { DocConfig } from "@/lib/docConfigs";
-import { Doc, subscribe, createDoc, updateDocById, deleteDocById } from "@/lib/store";
+import { Doc, listDocs, createDoc, updateDocById, deleteDocById } from "@/lib/store";
 import { formatCurrency, formatDate, nextDocNumber } from "@/lib/utils";
 import { printDocument } from "@/lib/print";
 import { exportToCsv } from "@/lib/export";
@@ -32,6 +33,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Doc | null>(null);
   const [saving, setSaving] = useState(false);
+  const [toDelete, setToDelete] = useState<Doc | null>(null);
 
   const [party, setParty] = useState("");
   const [date, setDate] = useState(today());
@@ -40,19 +42,29 @@ export function DocumentPage({ config }: { config: DocConfig }) {
   const [amount, setAmount] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ item: "", qty: 1, rate: 0 }]);
 
-  useEffect(() => {
+  // Load the document listing from the API; re-called after every mutation.
+  const load = useCallback(async () => {
     setLoading(true);
-    const unsub = subscribe(config.collection, (r) => { setRows(r); setLoading(false); });
-    return unsub;
+    try {
+      setRows(await listDocs(config.collection));
+    } catch (err: any) {
+      toast({ title: "Could not load documents", description: err?.message, type: "error" });
+    } finally {
+      setLoading(false);
+    }
   }, [config.collection]);
 
   useEffect(() => {
-    if (config.party === "customer") return subscribe("customers", setParties);
-    if (config.party === "vendor") return subscribe("vendors", setParties);
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const coll = config.party === "customer" ? "customers" : config.party === "vendor" ? "vendors" : null;
+    if (coll) listDocs(coll).then(setParties).catch(() => {});
   }, [config.party]);
 
   useEffect(() => {
-    if (config.itemized) return subscribe("items", setItems);
+    if (config.itemized) listDocs("items").then(setItems).catch(() => {});
   }, [config.itemized]);
 
   const filtered = useMemo(() => {
@@ -99,6 +111,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
         await createDoc(config.collection, { number, status: "Posted", ...payload });
         toast({ title: `${config.title} ${number} created`, type: "success" });
       }
+      await load(); // re-fetch the listing
       setOpen(false);
       reset();
     } catch (err: any) {
@@ -119,9 +132,10 @@ export function DocumentPage({ config }: { config: DocConfig }) {
     toast({ title: "Exported to CSV", type: "success" });
   };
 
-  const remove = async (row: Doc) => {
-    if (!confirm("Delete this document?")) return;
-    await deleteDocById(config.collection, row.id);
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    await deleteDocById(config.collection, toDelete.id);
+    await load(); // re-fetch the listing
     toast({ title: "Document deleted", type: "success" });
   };
 
@@ -183,7 +197,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" title="Print" onClick={() => printDocument(config, r)}><Printer className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" title="Delete" onClick={() => remove(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setToDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -299,6 +313,15 @@ export function DocumentPage({ config }: { config: DocConfig }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(v) => !v && setToDelete(null)}
+        title={`Delete ${config.title.toLowerCase()}?`}
+        description={`Document “${toDelete?.number ?? ""}” will be permanently removed. This action cannot be undone.`}
+        confirmLabel="Delete document"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
