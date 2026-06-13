@@ -14,10 +14,18 @@ import { docConfigs } from "@/lib/docConfigs";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const POS = lazy(() => import("@/pages/POS"));
+const UsersRoles = lazy(() => import("@/pages/UsersRoles"));
+const CompanySettings = lazy(() => import("@/pages/settings/CompanySettings"));
+const FinancialYear = lazy(() => import("@/pages/settings/FinancialYear"));
+const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"));
 
 function resolve(leaf: NavLeaf) {
   const { path, label } = leaf;
   if (path === "/pos") return <POS />;
+  if (path === "/settings/users") return <UsersRoles />;
+  if (path === "/settings/company") return <CompanySettings />;
+  if (path === "/settings/financial-year") return <FinancialYear />;
+  if (path === "/settings/documents") return <DocumentSettings />;
   if (masterConfigs[path]) return <CrudPage config={masterConfigs[path]} />;
   if (docConfigs[path]) return <DocumentPage config={docConfigs[path]} />;
   if (path.startsWith("/reports/")) return <ReportPage title={label} />;
