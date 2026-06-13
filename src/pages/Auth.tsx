@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/toast";
 import { FieldError } from "@/components/ui/field-error";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { Logo } from "@/components/Logo";
 import { brand, countryCodes } from "@/lib/brand";
 import { FIREBASE_CONFIGURED } from "@/lib/firebase";
@@ -56,7 +57,7 @@ const signupSchema = Yup.object({
 });
 
 export default function Auth({ initial = "signin" }: { initial?: View }) {
-  const { user, signIn, signUp, resendVerification, checkVerified, resetPassword } = useAuth();
+  const { user, loading, signIn, signUp, resendVerification, checkVerified, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -127,6 +128,10 @@ export default function Auth({ initial = "signin" }: { initial?: View }) {
     if (user?.emailVerified && view !== "verify") navigate("/");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // While the initial auth state resolves, show the loader (avoids a
+  // flash of the login form before a signed-in user is redirected).
+  if (loading) return <FullScreenLoader />;
 
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[#06121c] p-4">

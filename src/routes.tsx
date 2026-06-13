@@ -7,6 +7,7 @@ import { DocumentPage } from "@/components/DocumentPage";
 import { ReportPage } from "@/components/ReportPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { GenericModule } from "@/components/GenericModule";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 import { allRoutes, NavLeaf } from "@/lib/navigation";
 import { masterConfigs } from "@/lib/schemas";
 import { docConfigs } from "@/lib/docConfigs";
@@ -35,7 +36,7 @@ function resolve(leaf: NavLeaf) {
 
 export function AppRoutes() {
   return (
-    <Suspense fallback={<div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>}>
+    <Suspense fallback={<FullScreenLoader />}>
       <Routes>
         <Route path="/login" element={<Auth initial="signin" />} />
         <Route path="/signup" element={<Auth initial="signup" />} />
