@@ -194,10 +194,12 @@ export function DocumentPage({ config }: { config: DocConfig }) {
                   <TableCell>{r.reference || "—"}</TableCell>
                   <TableCell className="font-semibold">{formatCurrency(Number(r.total || 0))}</TableCell>
                   <TableCell><Badge variant="success">{r.status || "Posted"}</Badge></TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" title="Print" onClick={() => printDocument(config, r)}><Printer className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setToDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Print" onClick={() => printDocument(config, r)}><Printer className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Delete" onClick={() => setToDelete(r)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
