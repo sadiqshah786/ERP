@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendEmailVerification,
+  sendPasswordResetEmail,
   reload,
   User,
 } from "firebase/auth";
@@ -34,6 +35,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   resendVerification: () => Promise<void>;
   checkVerified: () => Promise<boolean>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>(null!);
@@ -120,6 +122,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  const resetPassword = async (email: string) => {
+    if (FIREBASE_CONFIGURED) {
+      await sendPasswordResetEmail(auth, email);
+      return;
+    }
+    // demo mode — no real email; resolve so the UI shows the sent state
+    await new Promise((r) => setTimeout(r, 400));
+  };
+
   const signOut = async () => {
     if (FIREBASE_CONFIGURED) {
       await fbSignOut(auth);
@@ -131,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, resendVerification, checkVerified }}
+      value={{ user, loading, signIn, signUp, signOut, resendVerification, checkVerified, resetPassword }}
     >
       {children}
     </AuthContext.Provider>
