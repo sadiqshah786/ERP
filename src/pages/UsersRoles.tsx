@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
 import {
   UserPlus, Plus, Pencil, Trash2, Shield, Users as UsersIcon, Wrench, X, Loader2,
 } from "lucide-react";
+import { FieldError } from "@/components/ui/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -233,49 +236,62 @@ function UserModal({ state, roles, onClose, onSaved }: {
   state: UserModalState; roles: Doc[]; onClose: () => void; onSaved: () => void;
 }) {
   const { toast } = useToast();
-  const [form, setForm] = useState<Record<string, any>>({});
-  const [saving, setSaving] = useState(false);
-  useEffect(() => { if (state.open) setForm(state.editing ? { ...state.editing } : { status: "Active" }); }, [state]);
+  const initial = {
+    name: state.editing?.name ?? "", email: state.editing?.email ?? "",
+    role: state.editing?.role ?? "", status: state.editing?.status ?? "Active",
+  };
+  const schema = Yup.object({
+    name: Yup.string().required("Full name is required"),
+    email: Yup.string().email("Enter a valid email address").required("Email is required"),
+  });
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  const submit = async (values: typeof initial) => {
     try {
-      const payload = { name: form.name || "", email: form.email || "", role: form.role || "", status: form.status || "Active" };
-      if (state.editing) await updateDocById("users", state.editing.id, payload);
-      else await createDoc("users", payload);
+      if (state.editing) await updateDocById("users", state.editing.id, values);
+      else await createDoc("users", values);
       toast({ title: state.editing ? "User updated" : "User added", type: "success" });
       onSaved();
     } catch (err: any) { toast({ title: "Save failed", description: err?.message, type: "error" }); }
-    finally { setSaving(false); }
   };
 
   return (
     <Dialog open={state.open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent>
         <DialogHeader><DialogTitle>{state.editing ? "Edit User" : "Add User"}</DialogTitle></DialogHeader>
-        <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label>Full Name *</Label><Input required value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Email *</Label><Input type="email" required value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select value={form.role ?? ""} onValueChange={(v) => setForm({ ...form, role: v })}>
-              <SelectTrigger><SelectValue placeholder="Select role…" /></SelectTrigger>
-              <SelectContent>{roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select value={form.status ?? "Active"} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Disabled">Disabled</SelectItem></SelectContent>
-            </Select>
-          </div>
-          <DialogFooter className="sm:col-span-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}{state.editing ? "Save changes" : "Add User"}</Button>
-          </DialogFooter>
-        </form>
+        <Formik enableReinitialize initialValues={initial} validationSchema={schema} onSubmit={submit}>
+          {({ values, errors, touched, handleChange, handleBlur, setFieldValue, isSubmitting }) => (
+            <Form className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Full Name *</Label>
+                <Input name="name" value={values.name} onChange={handleChange} onBlur={handleBlur} className={cn(touched.name && errors.name && "border-destructive")} />
+                <FieldError error={touched.name && errors.name} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email *</Label>
+                <Input name="email" type="email" value={values.email} onChange={handleChange} onBlur={handleBlur} className={cn(touched.email && errors.email && "border-destructive")} />
+                <FieldError error={touched.email && errors.email} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <Select value={values.role} onValueChange={(v) => setFieldValue("role", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select role…" /></SelectTrigger>
+                  <SelectContent>{roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={values.status} onValueChange={(v) => setFieldValue("status", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Disabled">Disabled</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <DialogFooter className="sm:col-span-2">
+                <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}{state.editing ? "Save changes" : "Add User"}</Button>
+              </DialogFooter>
+            </Form>
+          )}
+        </Formik>
       </DialogContent>
     </Dialog>
   );
@@ -290,6 +306,7 @@ function RoleModal({ state, onClose, onSaved }: { state: RoleModalState; onClose
   const [perms, setPerms] = useState<Permissions>({});
   const [activeTab, setActiveTab] = useState(PERMISSION_TABS[0].key);
   const [saving, setSaving] = useState(false);
+  const [nameErr, setNameErr] = useState("");
 
   useEffect(() => {
     if (state.open) {
@@ -297,6 +314,7 @@ function RoleModal({ state, onClose, onSaved }: { state: RoleModalState; onClose
       setDescription(state.editing?.description ?? "");
       setPerms(state.editing?.permissions ?? {});
       setActiveTab(PERMISSION_TABS[0].key);
+      setNameErr("");
     }
   }, [state]);
 
@@ -313,6 +331,7 @@ function RoleModal({ state, onClose, onSaved }: { state: RoleModalState; onClose
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) { setNameErr("Role name is required"); return; }
     setSaving(true);
     try {
       const payload = { name, description, permissions: perms };
@@ -330,7 +349,11 @@ function RoleModal({ state, onClose, onSaved }: { state: RoleModalState; onClose
         <DialogHeader><DialogTitle>{state.editing ? `Edit Role — ${state.editing.name}` : "Create Role"}</DialogTitle></DialogHeader>
         <form onSubmit={save} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><Label>Role Name *</Label><Input required placeholder="e.g., Sales Manager" value={name} onChange={(e) => setName(e.target.value)} disabled={state.editing?.system} /></div>
+            <div className="space-y-1.5">
+              <Label>Role Name *</Label>
+              <Input placeholder="e.g., Sales Manager" value={name} onChange={(e) => { setName(e.target.value); if (nameErr) setNameErr(""); }} disabled={state.editing?.system} className={cn(nameErr && "border-destructive")} />
+              <FieldError error={nameErr} />
+            </div>
             <div className="space-y-1.5"><Label>Description</Label><Input placeholder="Brief description of this role" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           </div>
 

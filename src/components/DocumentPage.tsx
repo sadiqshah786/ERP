@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FieldError } from "@/components/ui/field-error";
 import { useToast } from "@/components/ui/toast";
 import { DocConfig } from "@/lib/docConfigs";
 import { Doc, listDocs, createDoc, updateDocById, deleteDocById } from "@/lib/store";
-import { formatCurrency, formatDate, nextDocNumber } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, nextDocNumber } from "@/lib/utils";
 import { printDocument } from "@/lib/print";
 import { exportToCsv } from "@/lib/export";
 
@@ -41,6 +42,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState(0);
   const [lines, setLines] = useState<Line[]>([{ item: "", qty: 1, rate: 0 }]);
+  const [errors, setErrors] = useState<{ party?: string; date?: string; lines?: string; amount?: string }>({});
 
   // Load the document listing from the API; re-called after every mutation.
   const load = useCallback(async () => {
@@ -80,6 +82,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
     setEditing(null);
     setParty(""); setDate(today()); setReference(""); setNotes(""); setAmount(0);
     setLines([{ item: "", qty: 1, rate: 0 }]);
+    setErrors({});
   };
 
   const openNew = () => { reset(); setOpen(true); };
@@ -95,8 +98,23 @@ export function DocumentPage({ config }: { config: DocConfig }) {
     setOpen(true);
   };
 
+  const validate = () => {
+    const e: typeof errors = {};
+    if (config.party !== "none" && !party) e.party = `${config.party === "customer" ? "Customer" : "Vendor"} is required`;
+    if (!date) e.date = "Date is required";
+    if (config.itemized) {
+      const valid = lines.filter((l) => l.item && l.qty > 0);
+      if (valid.length === 0) e.lines = "Add at least one line item with quantity";
+    } else if (!(amount > 0)) {
+      e.amount = "Amount must be greater than 0";
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     const payload: Record<string, any> = {
       date, party, reference, notes, total,
       ...(config.itemized ? { lines: lines.filter((l) => l.item) } : { amount }),
@@ -215,20 +233,22 @@ export function DocumentPage({ config }: { config: DocConfig }) {
             <div className="grid gap-4 sm:grid-cols-2">
               {config.party !== "none" && (
                 <div className="space-y-1.5">
-                  <Label>{config.party === "customer" ? "Customer" : "Vendor"}</Label>
-                  <Select value={party} onValueChange={setParty}>
-                    <SelectTrigger><SelectValue placeholder={`Select ${config.party}…`} /></SelectTrigger>
+                  <Label>{config.party === "customer" ? "Customer" : "Vendor"} *</Label>
+                  <Select value={party} onValueChange={(v) => { setParty(v); setErrors((p) => ({ ...p, party: undefined })); }}>
+                    <SelectTrigger className={cn(errors.party && "border-destructive")}><SelectValue placeholder={`Select ${config.party}…`} /></SelectTrigger>
                     <SelectContent>
                       {parties.length === 0 ? (
                         <SelectItem value="—" disabled>No {config.party}s — add one first</SelectItem>
                       ) : parties.map((p) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <FieldError error={errors.party} />
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label>Date</Label>
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <Label>Date *</Label>
+                <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }} className={cn(errors.date && "border-destructive")} />
+                <FieldError error={errors.date} />
               </div>
               <div className="space-y-1.5">
                 <Label>Reference</Label>
@@ -281,14 +301,16 @@ export function DocumentPage({ config }: { config: DocConfig }) {
                     </tbody>
                   </table>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setLines((ls) => [...ls, { item: "", qty: 1, rate: 0 }])}>
+                <Button type="button" variant="outline" size="sm" onClick={() => { setLines((ls) => [...ls, { item: "", qty: 1, rate: 0 }]); setErrors((p) => ({ ...p, lines: undefined })); }}>
                   <Plus className="h-4 w-4" /> Add line
                 </Button>
+                <FieldError error={errors.lines} />
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label>Amount</Label>
-                <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                <Label>Amount *</Label>
+                <Input type="number" value={amount} onChange={(e) => { setAmount(Number(e.target.value)); setErrors((p) => ({ ...p, amount: undefined })); }} className={cn(errors.amount && "border-destructive")} />
+                <FieldError error={errors.amount} />
               </div>
             )}
 

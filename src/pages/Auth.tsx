@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
 import {
   Mail, Lock, User as UserIcon, Briefcase, Eye, EyeOff, ArrowRight, Loader2, RefreshCw,
 } from "lucide-react";
-import { useAuth, SignupProfile } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/toast";
+import { FieldError } from "@/components/ui/field-error";
 import { LoginBrandPanel, SignupBrandPanel } from "@/components/auth/BrandPanel";
 import { Logo } from "@/components/Logo";
 import { brand, countryCodes } from "@/lib/brand";
@@ -14,8 +17,8 @@ import { cn } from "@/lib/utils";
 type View = "signin" | "signup" | "verify";
 
 function Field({
-  icon: Icon, label, right, children,
-}: { icon?: React.ElementType; label: string; right?: React.ReactNode; children: React.ReactNode }) {
+  icon: Icon, label, right, error, children,
+}: { icon?: React.ElementType; label: string; right?: React.ReactNode; error?: unknown; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -26,6 +29,7 @@ function Field({
         {Icon && <Icon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />}
         {children}
       </div>
+      <FieldError error={error} />
     </div>
   );
 }
@@ -36,49 +40,43 @@ const inputCls = (hasIcon = true) =>
     hasIcon ? "pl-10 pr-4" : "px-4"
   );
 
+const signinSchema = Yup.object({
+  email: Yup.string().email("Enter a valid email address").required("Email is required"),
+  password: Yup.string().required("Password is required"),
+});
+const signupSchema = Yup.object({
+  name: Yup.string().required("Full name is required"),
+  company: Yup.string().required("Company name is required"),
+  email: Yup.string().email("Enter a valid email address").required("Email is required"),
+  phone: Yup.string().required("WhatsApp number is required").matches(/^[0-9\s-]{6,}$/, "Enter a valid number"),
+  password: Yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
+});
+
 export default function Auth({ initial = "signin" }: { initial?: View }) {
   const { user, signIn, signUp, resendVerification, checkVerified } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const [view, setView] = useState<View>(initial);
-  const [busy, setBusy] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
 
-  // shared form state
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
-  const [dial, setDial] = useState("+92");
-  const [phone, setPhone] = useState("");
-
-  // ── Sign in ────────────────────────────────────────────────
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
+  const doSignIn = async (values: { email: string; password: string }) => {
     try {
-      await signIn(email, password);
+      await signIn(values.email, values.password);
       navigate("/");
     } catch (err: any) {
       toast({ title: "Sign in failed", description: friendly(err), type: "error" });
-    } finally {
-      setBusy(false);
     }
   };
 
-  // ── Sign up (step 1) ───────────────────────────────────────
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
+  const doSignUp = async (values: { name: string; company: string; email: string; dial: string; phone: string; password: string }) => {
     try {
-      const profile: SignupProfile = { name, company, whatsapp: `${dial} ${phone}` };
-      await signUp(email, password, profile);
+      await signUp(values.email, values.password, { name: values.name, company: values.company, whatsapp: `${values.dial} ${values.phone}` });
+      setVerifyEmail(values.email);
       setView("verify");
     } catch (err: any) {
       toast({ title: "Could not create account", description: friendly(err), type: "error" });
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -141,20 +139,21 @@ export default function Auth({ initial = "signin" }: { initial?: View }) {
                 <h1 className="text-3xl font-black text-gray-900">Welcome Back</h1>
                 <p className="mt-1 text-gray-500">Sign in to manage your business</p>
 
-                <form onSubmit={handleSignIn} className="mt-8 space-y-5">
-                  <Field icon={Mail} label="Email Address">
-                    <input className={inputCls()} type="email" required placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </Field>
-                  <Field
-                    icon={Lock}
-                    label="Password"
-                    right={<button type="button" className="text-sm font-semibold text-primary hover:underline">Forgot?</button>}
-                  >
-                    <input className={cn(inputCls(), "pr-11")} type={showPwd ? "text" : "password"} required placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    <PwdToggle on={showPwd} set={setShowPwd} />
-                  </Field>
-                  <SubmitButton busy={busy}>Sign In <ArrowRight className="h-4 w-4" /></SubmitButton>
-                </form>
+                <Formik initialValues={{ email: "", password: "" }} validationSchema={signinSchema} onSubmit={doSignIn}>
+                  {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+                    <Form className="mt-8 space-y-5">
+                      <Field icon={Mail} label="Email Address" error={touched.email && errors.email}>
+                        <input name="email" className={cn(inputCls(), touched.email && errors.email && "border-destructive")} type="email" placeholder="you@company.com" value={values.email} onChange={handleChange} onBlur={handleBlur} />
+                      </Field>
+                      <Field icon={Lock} label="Password" error={touched.password && errors.password}
+                        right={<button type="button" className="text-sm font-semibold text-primary hover:underline">Forgot?</button>}>
+                        <input name="password" className={cn(inputCls(), "pr-11", touched.password && errors.password && "border-destructive")} type={showPwd ? "text" : "password"} placeholder="Enter your password" value={values.password} onChange={handleChange} onBlur={handleBlur} />
+                        <PwdToggle on={showPwd} set={setShowPwd} />
+                      </Field>
+                      <SubmitButton busy={isSubmitting}>Sign In <ArrowRight className="h-4 w-4" /></SubmitButton>
+                    </Form>
+                  )}
+                </Formik>
 
                 <p className="mt-6 text-center text-sm text-gray-600">
                   Don't have an account?{" "}
@@ -170,36 +169,38 @@ export default function Auth({ initial = "signin" }: { initial?: View }) {
                 <h1 className="text-3xl font-black text-gray-900">Create Your Account</h1>
                 <p className="mt-1 text-gray-500">Step 1 of 2 — Account Details</p>
 
-                <form onSubmit={handleSignUp} className="mt-7 space-y-4">
-                  <Field icon={UserIcon} label="Full Name">
-                    <input className={inputCls()} required placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
-                  </Field>
-                  <Field icon={Briefcase} label="Company Name">
-                    <input className={inputCls()} required placeholder="Your company" value={company} onChange={(e) => setCompany(e.target.value)} />
-                  </Field>
-                  <Field icon={Mail} label="Email Address">
-                    <input className={inputCls()} type="email" required placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </Field>
-                  <Field label="WhatsApp Number">
-                    <div className="flex gap-2">
-                      <select
-                        className="h-12 w-36 shrink-0 rounded-xl border border-gray-200 bg-gray-50 px-2 text-sm text-gray-900 outline-none focus:border-primary focus:bg-white"
-                        value={dial}
-                        onChange={(e) => setDial(e.target.value)}
-                      >
-                        {countryCodes.map((c) => (
-                          <option key={c.iso} value={c.code}>{c.iso} {c.code} {c.name}</option>
-                        ))}
-                      </select>
-                      <input className={inputCls(false)} required placeholder="3001234567" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                    </div>
-                  </Field>
-                  <Field icon={Lock} label="Password">
-                    <input className={cn(inputCls(), "pr-11")} type={showPwd ? "text" : "password"} required minLength={6} placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    <PwdToggle on={showPwd} set={setShowPwd} />
-                  </Field>
-                  <SubmitButton busy={busy}>Create Account <ArrowRight className="h-4 w-4" /></SubmitButton>
-                </form>
+                <Formik
+                  initialValues={{ name: "", company: "", email: "", dial: "+92", phone: "", password: "" }}
+                  validationSchema={signupSchema} onSubmit={doSignUp}
+                >
+                  {({ values, errors, touched, handleChange, handleBlur, setFieldValue, isSubmitting }) => (
+                    <Form className="mt-7 space-y-4">
+                      <Field icon={UserIcon} label="Full Name" error={touched.name && errors.name}>
+                        <input name="name" className={cn(inputCls(), touched.name && errors.name && "border-destructive")} placeholder="Your name" value={values.name} onChange={handleChange} onBlur={handleBlur} />
+                      </Field>
+                      <Field icon={Briefcase} label="Company Name" error={touched.company && errors.company}>
+                        <input name="company" className={cn(inputCls(), touched.company && errors.company && "border-destructive")} placeholder="Your company" value={values.company} onChange={handleChange} onBlur={handleBlur} />
+                      </Field>
+                      <Field icon={Mail} label="Email Address" error={touched.email && errors.email}>
+                        <input name="email" className={cn(inputCls(), touched.email && errors.email && "border-destructive")} type="email" placeholder="you@company.com" value={values.email} onChange={handleChange} onBlur={handleBlur} />
+                      </Field>
+                      <Field label="WhatsApp Number" error={touched.phone && errors.phone}>
+                        <div className="flex gap-2">
+                          <select className="h-12 w-36 shrink-0 rounded-xl border border-gray-200 bg-gray-50 px-2 text-sm text-gray-900 outline-none focus:border-primary focus:bg-white"
+                            value={values.dial} onChange={(e) => setFieldValue("dial", e.target.value)}>
+                            {countryCodes.map((c) => <option key={c.iso} value={c.code}>{c.iso} {c.code} {c.name}</option>)}
+                          </select>
+                          <input name="phone" className={cn(inputCls(false), touched.phone && errors.phone && "border-destructive")} placeholder="3001234567" value={values.phone} onChange={handleChange} onBlur={handleBlur} />
+                        </div>
+                      </Field>
+                      <Field icon={Lock} label="Password" error={touched.password && errors.password}>
+                        <input name="password" className={cn(inputCls(), "pr-11", touched.password && errors.password && "border-destructive")} type={showPwd ? "text" : "password"} placeholder="Create a password" value={values.password} onChange={handleChange} onBlur={handleBlur} />
+                        <PwdToggle on={showPwd} set={setShowPwd} />
+                      </Field>
+                      <SubmitButton busy={isSubmitting}>Create Account <ArrowRight className="h-4 w-4" /></SubmitButton>
+                    </Form>
+                  )}
+                </Formik>
 
                 <p className="mt-6 text-center text-sm text-gray-600">
                   Already have an account?{" "}
@@ -220,7 +221,7 @@ export default function Auth({ initial = "signin" }: { initial?: View }) {
                 </div>
                 <h2 className="mt-6 text-2xl font-black text-gray-900">Verify Your Email</h2>
                 <p className="mt-2 text-gray-500">We've sent a verification link to</p>
-                <p className="font-bold text-primary">{email || user?.email}</p>
+                <p className="font-bold text-primary">{verifyEmail || user?.email}</p>
                 <p className="mx-auto mt-4 max-w-xs text-sm leading-relaxed text-gray-500">
                   Click the link in your email to verify your account. This page will automatically proceed once verified.
                 </p>

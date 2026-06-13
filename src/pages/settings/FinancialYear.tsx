@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
+import { Formik, Form } from "formik";
+import * as Yup from "yup";
 import { Plus, Pencil, Lock, Unlock, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { FieldError } from "@/components/ui/field-error";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { Doc, listDocs, createDoc, updateDocById } from "@/lib/store";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 export default function FinancialYear() {
   const { toast } = useToast();
   const [years, setYears] = useState<Doc[]>([]);
   const [modal, setModal] = useState<{ open: boolean; editing: Doc | null }>({ open: false, editing: null });
-  const [form, setForm] = useState<Record<string, any>>({});
-  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     let y = await listDocs("financial_years");
@@ -29,19 +30,23 @@ export default function FinancialYear() {
 
   const active = years.find((y) => y.status === "Active");
 
-  const open = (editing: Doc | null) => {
-    setForm(editing ? { ...editing } : { code: "", name: "", start: "", end: "" });
-    setModal({ open: true, editing });
-  };
+  const open = (editing: Doc | null) => setModal({ open: true, editing });
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  const schema = Yup.object({
+    code: Yup.string().required("Year code is required"),
+    name: Yup.string().required("Year name is required"),
+    start: Yup.string().required("Start date is required"),
+    end: Yup.string().required("End date is required")
+      .test("after", "End date must be after start date", function (v) {
+        const { start } = this.parent;
+        return !start || !v || new Date(v) > new Date(start);
+      }),
+  });
+
+  const submit = async (values: { code: string; name: string; start: string; end: string }) => {
     try {
-      const payload = { code: form.code, name: form.name, start: form.start, end: form.end };
-      if (modal.editing) await updateDocById("financial_years", modal.editing.id, payload);
-      else await createDoc("financial_years", { ...payload, status: "Active" });
-      // ensure single active: if creating active, close others
+      if (modal.editing) await updateDocById("financial_years", modal.editing.id, values);
+      else await createDoc("financial_years", { ...values, status: "Active" });
       if (!modal.editing) {
         const all = await listDocs("financial_years");
         const newest = all[0];
@@ -51,7 +56,6 @@ export default function FinancialYear() {
       setModal({ open: false, editing: null });
       await load();
     } catch (err: any) { toast({ title: "Save failed", description: err?.message, type: "error" }); }
-    finally { setSaving(false); }
   };
 
   const toggleClose = async (y: Doc) => {
@@ -117,16 +121,27 @@ export default function FinancialYear() {
       <Dialog open={modal.open} onOpenChange={(v) => !v && setModal({ open: false, editing: null })}>
         <DialogContent>
           <DialogHeader><DialogTitle>{modal.editing ? "Edit Financial Year" : "New Financial Year"}</DialogTitle></DialogHeader>
-          <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><Label>Year Code *</Label><Input required placeholder="2025-26" value={form.code ?? ""} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Year Name *</Label><Input required placeholder="Financial Year 2025-26" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Start Date *</Label><Input type="date" required value={form.start ?? ""} onChange={(e) => setForm({ ...form, start: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>End Date *</Label><Input type="date" required value={form.end ?? ""} onChange={(e) => setForm({ ...form, end: e.target.value })} /></div>
-            <DialogFooter className="sm:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setModal({ open: false, editing: null })} disabled={saving}>Cancel</Button>
-              <Button type="submit" disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}{modal.editing ? "Save changes" : "Create"}</Button>
-            </DialogFooter>
-          </form>
+          <Formik
+            enableReinitialize
+            initialValues={{ code: modal.editing?.code ?? "", name: modal.editing?.name ?? "", start: modal.editing?.start ?? "", end: modal.editing?.end ?? "" }}
+            validationSchema={schema} onSubmit={submit}
+          >
+            {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => {
+              const err = (n: "code" | "name" | "start" | "end") => touched[n] && errors[n];
+              return (
+                <Form className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5"><Label>Year Code *</Label><Input name="code" placeholder="2025-26" value={values.code} onChange={handleChange} onBlur={handleBlur} className={cn(err("code") && "border-destructive")} /><FieldError error={err("code")} /></div>
+                  <div className="space-y-1.5"><Label>Year Name *</Label><Input name="name" placeholder="Financial Year 2025-26" value={values.name} onChange={handleChange} onBlur={handleBlur} className={cn(err("name") && "border-destructive")} /><FieldError error={err("name")} /></div>
+                  <div className="space-y-1.5"><Label>Start Date *</Label><Input name="start" type="date" value={values.start} onChange={handleChange} onBlur={handleBlur} className={cn(err("start") && "border-destructive")} /><FieldError error={err("start")} /></div>
+                  <div className="space-y-1.5"><Label>End Date *</Label><Input name="end" type="date" value={values.end} onChange={handleChange} onBlur={handleBlur} className={cn(err("end") && "border-destructive")} /><FieldError error={err("end")} /></div>
+                  <DialogFooter className="sm:col-span-2">
+                    <Button type="button" variant="outline" onClick={() => setModal({ open: false, editing: null })} disabled={isSubmitting}>Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}{modal.editing ? "Save changes" : "Create"}</Button>
+                  </DialogFooter>
+                </Form>
+              );
+            }}
+          </Formik>
         </DialogContent>
       </Dialog>
     </div>
