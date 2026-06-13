@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Search, Inbox, Download, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Inbox, Download, Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ export function CrudPage({ config }: { config: EntityConfig }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Doc | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -61,6 +62,7 @@ export function CrudPage({ config }: { config: EntityConfig }) {
       if (f.type === "number") v = v === "" || v == null ? 0 : Number(v);
       payload[f.name] = v ?? "";
     }
+    setSaving(true);
     try {
       if (editing) {
         await updateDocById(config.collection, editing.id, payload);
@@ -72,6 +74,8 @@ export function CrudPage({ config }: { config: EntityConfig }) {
       setOpen(false);
     } catch (err: any) {
       toast({ title: "Save failed", description: err?.message, type: "error" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -197,8 +201,11 @@ export function CrudPage({ config }: { config: EntityConfig }) {
               </div>
             ))}
             <DialogFooter className="sm:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit">{editing ? "Save changes" : `Create ${config.singular}`}</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {editing ? "Save changes" : `Create ${config.singular}`}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

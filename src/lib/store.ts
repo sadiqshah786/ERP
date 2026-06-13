@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, orderBy, serverTimestamp, onSnapshot, Unsubscribe,
+  serverTimestamp, onSnapshot, Unsubscribe,
 } from "firebase/firestore";
 import { db, FIREBASE_CONFIGURED } from "./firebase";
 
@@ -10,10 +10,27 @@ export interface Doc { id: string; [k: string]: any }
 // Data layer. Uses Firestore when configured, otherwise falls back
 // to localStorage so the app is fully usable in demo mode.
 // Same async API for both paths.
+//
+// Ordering note: we sort on a client-set `createdAtMs` (a real number
+// written at create time) rather than on Firestore's serverTimestamp.
+// A serverTimestamp is null for a moment on a fresh write (pending),
+// which would push new rows out of place until a refresh. `createdAtMs`
+// is set instantly, so new records show at the top immediately via the
+// live onSnapshot listener — no refresh needed.
 // ─────────────────────────────────────────────────────────────
 
 const LS_PREFIX = "amal_erp::";
 const lsKey = (c: string) => LS_PREFIX + c;
+
+function timeOf(d: Doc): number {
+  if (typeof d.createdAtMs === "number") return d.createdAtMs;
+  // Firestore Timestamp → millis, else 0
+  if (d.createdAt && typeof d.createdAt.toMillis === "function") return d.createdAt.toMillis();
+  if (typeof d.createdAt === "number") return d.createdAt;
+  return 0;
+}
+
+const sortNewestFirst = (rows: Doc[]) => rows.sort((a, b) => timeOf(b) - timeOf(a));
 
 function lsRead(c: string): Doc[] {
   try {
@@ -29,34 +46,39 @@ function lsWrite(c: string, rows: Doc[]) {
 
 export async function listDocs(c: string): Promise<Doc[]> {
   if (FIREBASE_CONFIGURED) {
-    const q = query(collection(db, c), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const snap = await getDocs(collection(db, c));
+    return sortNewestFirst(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   }
-  return lsRead(c).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return sortNewestFirst(lsRead(c));
 }
 
 export function subscribe(c: string, cb: (rows: Doc[]) => void): Unsubscribe {
   if (FIREBASE_CONFIGURED) {
-    const q = query(collection(db, c), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    // No orderBy → includes pending local writes instantly and avoids
+    // excluding docs that miss the sort field. We sort client-side.
+    return onSnapshot(
+      collection(db, c),
+      (snap) => cb(sortNewestFirst(snap.docs.map((d) => ({ id: d.id, ...d.data() })))),
+      (err) => console.error(`[store] subscribe(${c}) failed:`, err.message)
+    );
   }
   const handler = (e: Event) => {
-    if ((e as CustomEvent).detail === c) cb(lsRead(c));
+    if ((e as CustomEvent).detail === c) cb(sortNewestFirst(lsRead(c)));
   };
   window.addEventListener("amal-store-change", handler);
-  cb(lsRead(c));
+  cb(sortNewestFirst(lsRead(c)));
   return () => window.removeEventListener("amal-store-change", handler);
 }
 
 export async function createDoc(c: string, data: Record<string, any>): Promise<string> {
+  const createdAtMs = Date.now();
   if (FIREBASE_CONFIGURED) {
-    const ref = await addDoc(collection(db, c), { ...data, createdAt: serverTimestamp() });
+    const ref = await addDoc(collection(db, c), { ...data, createdAtMs, createdAt: serverTimestamp() });
     return ref.id;
   }
   const rows = lsRead(c);
   const id = crypto.randomUUID();
-  rows.push({ id, ...data, createdAt: Date.now() });
+  rows.push({ id, ...data, createdAtMs, createdAt: createdAtMs });
   lsWrite(c, rows);
   return id;
 }

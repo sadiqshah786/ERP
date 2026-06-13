@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, FileText, Search, X, Printer, Pencil, Download } from "lucide-react";
+import { Plus, Trash2, FileText, Search, X, Printer, Pencil, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export function DocumentPage({ config }: { config: DocConfig }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Doc | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [party, setParty] = useState("");
   const [date, setDate] = useState(today());
@@ -88,16 +89,23 @@ export function DocumentPage({ config }: { config: DocConfig }) {
       date, party, reference, notes, total,
       ...(config.itemized ? { lines: lines.filter((l) => l.item) } : { amount }),
     };
-    if (editing) {
-      await updateDocById(config.collection, editing.id, payload);
-      toast({ title: `${editing.number} updated`, type: "success" });
-    } else {
-      const number = nextDocNumber(config.prefix, rows.length);
-      await createDoc(config.collection, { number, status: "Posted", ...payload });
-      toast({ title: `${config.title} ${number} created`, type: "success" });
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateDocById(config.collection, editing.id, payload);
+        toast({ title: `${editing.number} updated`, type: "success" });
+      } else {
+        const number = nextDocNumber(config.prefix, rows.length);
+        await createDoc(config.collection, { number, status: "Posted", ...payload });
+        toast({ title: `${config.title} ${number} created`, type: "success" });
+      }
+      setOpen(false);
+      reset();
+    } catch (err: any) {
+      toast({ title: "Save failed", description: err?.message, type: "error" });
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
-    reset();
   };
 
   const exportCsv = () => {
@@ -282,8 +290,11 @@ export function DocumentPage({ config }: { config: DocConfig }) {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit">{editing ? "Save Changes" : `Post ${config.title}`}</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {editing ? "Save Changes" : `Post ${config.title}`}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
