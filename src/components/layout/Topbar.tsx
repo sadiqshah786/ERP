@@ -44,7 +44,7 @@ export function Topbar({
           <div className="text-sm font-semibold">{user?.name ?? "User"}</div>
           <div className="text-[11px] text-muted-foreground">Admin</div>
         </div>
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-primary text-sm font-bold text-white">
+        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white ring-2 ring-primary/15">
           {(user?.name ?? "U").charAt(0).toUpperCase()}
         </div>
         <Button variant="outline" size="sm" onClick={signOut} className="hidden md:inline-flex">

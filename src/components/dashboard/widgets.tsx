@@ -73,7 +73,7 @@ export function SectionCard({ title, subtitle, icon, action, children, className
   children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl border bg-card card-shadow", className)}>
+    <div className={cn("rounded-2xl border bg-card card-shadow", className)}>
       <div className="flex items-start justify-between gap-3 p-5 pb-3">
         <div>
           <div className="flex items-center gap-2 font-bold">{icon}{title}</div>

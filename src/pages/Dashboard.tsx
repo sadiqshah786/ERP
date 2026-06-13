@@ -54,15 +54,16 @@ function Sparkline({ color }: { color: string }) {
   );
 }
 
-function KpiCard({ icon, label, value, color, spark }: any) {
+function KpiCard({ icon, label, value, color }: any) {
   return (
-    <div className="rounded-xl border bg-card p-5 card-shadow">
+    <div className="group relative overflow-hidden rounded-2xl border bg-card p-5 card-shadow card-hover">
+      <div className="absolute right-0 top-0 h-20 w-20 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20" style={{ background: color }} />
       <div className="flex items-center justify-between">
-        <div className="grid h-10 w-10 place-items-center rounded-lg" style={{ background: `${color}1a`, color }}>
+        <div className="grid h-11 w-11 place-items-center rounded-xl" style={{ background: `${color}1a`, color }}>
           {icon}
         </div>
       </div>
-      <div className="mt-3 text-2xl font-extrabold">{value}</div>
+      <div className="mt-3 text-2xl font-extrabold tracking-tight">{value}</div>
       <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-2"><Sparkline color={color} /></div>
     </div>
@@ -83,20 +84,22 @@ export default function Dashboard() {
   return (
     <div className="space-y-5">
       {/* Hero banner */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-[#066a97] text-white card-shadow-lg">
-        <div className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative overflow-hidden rounded-3xl hero-mesh text-white card-shadow-lg">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-secondary/25 blur-3xl" />
+        <div className="relative flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between lg:p-8">
           <div className="flex items-center gap-6">
             <div>
-              <div className="text-3xl font-extrabold tabular-nums">
+              <div className="text-4xl font-extrabold tabular-nums tracking-tight">
                 {now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
               </div>
               <div className="text-sm text-white/80">
                 {now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
-              <div className="mt-1 text-sm font-medium">{greeting}, {user?.name ?? "there"}!</div>
+              <div className="mt-1 text-sm font-semibold text-white/95">{greeting}, {user?.name ?? "there"}! 👋</div>
             </div>
-            <div className="hidden items-center gap-3 border-l border-white/20 pl-6 sm:flex">
-              <div className="grid h-14 w-14 place-items-center rounded-full border-4 border-white/30 text-lg font-extrabold">35</div>
+            <div className="hidden items-center gap-3 rounded-2xl bg-white/10 p-3 pr-5 ring-1 ring-white/15 backdrop-blur-sm sm:flex">
+              <div className="grid h-14 w-14 place-items-center rounded-full border-4 border-secondary/70 text-lg font-extrabold">35</div>
               <div>
                 <div className="text-xs text-white/70">Business Health</div>
                 <div className="font-bold">Needs Attention</div>

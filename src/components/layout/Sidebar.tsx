@@ -12,15 +12,19 @@ function useIsActive() {
 }
 
 function Leaf({ label, path, onNavigate, isActive }: { label: string; path: string; onNavigate: () => void; isActive: (p?: string) => boolean }) {
+  const active = isActive(path);
   return (
     <Link
       to={path}
       onClick={onNavigate}
       className={cn(
-        "block rounded-lg px-3 py-2 text-[13px] transition-colors",
-        isActive(path) ? "bg-sidebar-accent text-white" : "text-sidebar-foreground hover:bg-white/5 hover:text-white"
+        "relative flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-all",
+        active
+          ? "bg-white/15 font-semibold text-white shadow-sm ring-1 ring-white/10"
+          : "text-sidebar-foreground hover:bg-white/10 hover:text-white"
       )}
     >
+      <span className={cn("h-1.5 w-1.5 rounded-full transition-all", active ? "bg-secondary" : "bg-white/25")} />
       {label}
     </Link>
   );
@@ -44,8 +48,8 @@ function GroupItem({
         to={group.path}
         onClick={onNavigate}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-          groupActive ? "bg-sidebar-accent text-white" : "text-sidebar-foreground hover:bg-white/5 hover:text-white"
+          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+          groupActive ? "bg-white/15 text-white shadow-sm ring-1 ring-white/10" : "text-sidebar-foreground hover:bg-white/10 hover:text-white"
         )}
       >
         <group.icon className="h-[18px] w-[18px]" />
@@ -60,9 +64,12 @@ function GroupItem({
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-          groupActive && !open ? "text-white" : "",
-          open ? "bg-white/5 text-white" : "text-sidebar-foreground hover:bg-white/5 hover:text-white"
+          "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+          open
+            ? "bg-white/10 text-white"
+            : groupActive
+            ? "text-white"
+            : "text-sidebar-foreground hover:bg-white/10 hover:text-white"
         )}
       >
         <span className="flex items-center gap-3">
@@ -130,12 +137,12 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar transition-transform lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar bg-gradient-to-b from-white/10 via-transparent to-black/25 transition-transform lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
           <Logo variant="light" size={38} />
           <button className="text-sidebar-foreground lg:hidden" onClick={onClose}>
             <X className="h-5 w-5" />
