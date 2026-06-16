@@ -16,7 +16,7 @@ import { COA, CoaType, CoaNode, Nature, typeColors } from "@/lib/coa";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface RNode extends CoaNode {
-  _linked?: "customer" | "vendor";
+  _linked?: "customer" | "vendor" | "bank";
   _customId?: string;
   children?: RNode[];
 }
@@ -34,6 +34,7 @@ export default function ChartOfAccounts() {
   const { toast } = useToast();
   const [customers, setCustomers] = useState<Doc[]>([]);
   const [vendors, setVendors] = useState<Doc[]>([]);
+  const [banks, setBanks] = useState<Doc[]>([]);
   const [custom, setCustom] = useState<Doc[]>([]);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(() => {
@@ -49,6 +50,7 @@ export default function ChartOfAccounts() {
 
   useEffect(() => subscribe("customers", setCustomers), []);
   useEffect(() => subscribe("vendors", setVendors), []);
+  useEffect(() => subscribe("banks", setBanks), []);
   useEffect(() => subscribe("coa_custom", setCustom), []);
 
   // Build the runtime tree: defaults + injected customers/vendors + custom accounts.
@@ -64,6 +66,8 @@ export default function ChartOfAccounts() {
         n.children = customers.map((c, i) => ({ code: `${n.code}${pad(i + 1)}`, name: `Customer: ${c.name}`, level: 5, postable: true, _linked: "customer" as const }));
       } else if (n.link === "vendors") {
         n.children = vendors.map((v, i) => ({ code: `${n.code}${pad(i + 1)}`, name: `Vendor: ${v.name}`, level: 5, postable: true, _linked: "vendor" as const }));
+      } else if (n.link === "banks") {
+        n.children = banks.map((b, i) => ({ code: `${n.code}${pad(i + 1)}`, name: b.name + (b.accountNumber ? ` — ${b.accountNumber}` : ""), level: 5, postable: true, _linked: "bank" as const }));
       }
       // append custom postable accounts saved under this node
       const extra = customByParent.get(n.code) || [];
@@ -78,7 +82,7 @@ export default function ChartOfAccounts() {
       groups.forEach(inject);
       return { ...t, groups };
     });
-  }, [customers, vendors, custom]);
+  }, [customers, vendors, banks, custom]);
 
   const toggle = (code: string) => setExpanded((s) => { const n = new Set(s); n.has(code) ? n.delete(code) : n.add(code); return n; });
 
@@ -257,6 +261,7 @@ function NodeRow(props: RowProps) {
         <Badge variant="success" className="text-[10px]">POSTABLE</Badge>
         {node._linked === "customer" && <Badge className="bg-pink-100 text-pink-700 text-[10px]">Customer</Badge>}
         {node._linked === "vendor" && <Badge className="bg-violet-100 text-violet-700 text-[10px]">Vendor</Badge>}
+        {node._linked === "bank" && <Badge className="bg-cyan-100 text-cyan-700 text-[10px]">Bank</Badge>}
         {!node._customId && !node._linked && <Lock className="h-3 w-3 text-muted-foreground" />}
         <div className="ml-auto flex items-center gap-3">
           <Badge variant="outline" className="text-[10px]">{nature}</Badge>

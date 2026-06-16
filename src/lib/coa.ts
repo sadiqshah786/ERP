@@ -12,7 +12,7 @@ export interface CoaNode {
   name: string;
   level: number;          // 2 | 3 | 4 for groups
   postable?: boolean;     // true for detail accounts (leaves)
-  link?: "customers" | "vendors";
+  link?: "customers" | "vendors" | "banks";
   children?: CoaNode[];
 }
 
@@ -33,7 +33,7 @@ export const COA: CoaType[] = [
       { code: "11", name: "Current Assets", level: 2, children: [
         { code: "111", name: "Cash & Bank", level: 3, children: [
           { code: "11101", name: "Cash Accounts", level: 4, children: [leaf("11101001", "Cash in Hand"), leaf("11101002", "Petty Cash")] },
-          { code: "11102", name: "Bank Accounts", level: 4, children: [leaf("11102001", "Primary Bank Account")] },
+          { code: "11102", name: "Bank Accounts", level: 4, link: "banks", children: [] },
         ]},
         { code: "112", name: "Receivables", level: 3, children: [
           { code: "11201", name: "Receivable Customers", level: 4, link: "customers", children: [] },
