@@ -16,6 +16,7 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Auth = lazy(() => import("@/pages/Auth"));
 const POS = lazy(() => import("@/pages/POS"));
 const UsersRoles = lazy(() => import("@/pages/UsersRoles"));
+const ChartOfAccounts = lazy(() => import("@/pages/ChartOfAccounts"));
 const CompanySettings = lazy(() => import("@/pages/settings/CompanySettings"));
 const FinancialYear = lazy(() => import("@/pages/settings/FinancialYear"));
 const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"));
@@ -23,6 +24,7 @@ const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"))
 function resolve(leaf: NavLeaf) {
   const { path, label } = leaf;
   if (path === "/pos") return <POS />;
+  if (path === "/master/chart-of-accounts") return <ChartOfAccounts />;
   if (path === "/settings/users") return <UsersRoles />;
   if (path === "/settings/company") return <CompanySettings />;
   if (path === "/settings/financial-year") return <FinancialYear />;
