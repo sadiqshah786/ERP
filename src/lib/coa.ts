@@ -143,6 +143,26 @@ export const typeColors: Record<CoaType["color"], { head: string; bar: string; t
   expense:   { head: "bg-rose-50 dark:bg-rose-950/30",     bar: "bg-rose-500",    text: "text-rose-700 dark:text-rose-400" },
 };
 
+export interface FlatAccount { code: string; name: string; nature: Nature; kind?: "customer" | "vendor" | "bank" }
+
+const seq = (n: number) => String(n).padStart(3, "0");
+
+// Flatten all postable accounts (incl. live customer/vendor/bank sub-accounts).
+export function flattenAccounts(customers: any[], vendors: any[], banks: any[]): FlatAccount[] {
+  const out: FlatAccount[] = [];
+  COA.forEach((t) => {
+    const walk = (n: CoaNode) => {
+      if (n.postable) { out.push({ code: n.code, name: n.name, nature: t.nature }); return; }
+      if (n.link === "customers") customers.forEach((c, i) => out.push({ code: `${n.code}${seq(i + 1)}`, name: `Customer: ${c.name}`, nature: "Asset", kind: "customer" }));
+      else if (n.link === "vendors") vendors.forEach((v, i) => out.push({ code: `${n.code}${seq(i + 1)}`, name: `Vendor: ${v.name}`, nature: "Liability", kind: "vendor" }));
+      else if (n.link === "banks") banks.forEach((b, i) => out.push({ code: `${n.code}${seq(i + 1)}`, name: b.name + (b.accountNumber ? ` — ${b.accountNumber}` : ""), nature: "Asset", kind: "bank" }));
+      n.children?.forEach(walk);
+    };
+    t.groups.forEach(walk);
+  });
+  return out;
+}
+
 // Count helpers for the summary cards.
 export function countNodes(nodes: CoaNode[], levels: number[]): number {
   let n = 0;

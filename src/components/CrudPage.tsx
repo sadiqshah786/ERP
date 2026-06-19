@@ -38,9 +38,21 @@ export function CrudPage({ config }: { config: EntityConfig }) {
   const schema = useMemo(() => buildYupSchema(config.fields), [config]);
   const initialValues = useMemo(() => {
     const v: Record<string, any> = {};
-    for (const f of config.fields) v[f.name] = editing?.[f.name] ?? "";
+    for (const f of config.fields) v[f.name] = editing?.[f.name] ?? (f.name === "country" ? "Pakistan" : "");
+    if (config.codeField && !editing && !v[config.codeField]) {
+      v[config.codeField] = `${config.codePrefix || ""}${String(rows.length + 1).padStart(4, "0")}`;
+    }
     return v;
+    // rows.length intentionally captured at open time only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, editing]);
+
+  // ordered unique sections for grouped rendering
+  const sections = useMemo(() => {
+    const seen: string[] = [];
+    config.fields.forEach((f) => { const s = f.section || ""; if (!seen.includes(s)) seen.push(s); });
+    return seen;
+  }, [config]);
 
   // Load the listing from the API; re-called after every mutation.
   const load = useCallback(async () => {
@@ -209,49 +221,57 @@ export function CrudPage({ config }: { config: EntityConfig }) {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? `Edit ${config.singular}` : `New ${config.singular}`}</DialogTitle>
           </DialogHeader>
           <Formik enableReinitialize initialValues={initialValues} validationSchema={schema} onSubmit={handleSubmit}>
             {({ values, errors, touched, handleChange, handleBlur, setFieldValue, setFieldTouched, isSubmitting }) => {
               const invalid = (n: string) => touched[n] && errors[n];
+              const renderField = (f: typeof config.fields[number]) => (
+                <div key={f.name} className={f.type === "textarea" ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
+                  <Label htmlFor={f.name}>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
+                  {f.type === "select" ? (
+                    <Select
+                      value={(values[f.name] as string) ?? ""}
+                      onValueChange={(v) => { setFieldValue(f.name, v); setFieldTouched(f.name, true); }}
+                    >
+                      <SelectTrigger className={cn(invalid(f.name) && "border-destructive ring-destructive/20")}><SelectValue placeholder="Select…" /></SelectTrigger>
+                      <SelectContent>
+                        {f.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : f.type === "textarea" ? (
+                    <textarea
+                      id={f.name} name={f.name}
+                      className={cn("flex min-h-[72px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", invalid(f.name) && "border-destructive focus-visible:ring-destructive/20")}
+                      value={(values[f.name] as string) ?? ""}
+                      onChange={handleChange} onBlur={handleBlur}
+                    />
+                  ) : (
+                    <Input
+                      id={f.name} name={f.name}
+                      type={f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "date" ? "date" : "text"}
+                      placeholder={f.placeholder}
+                      className={cn(invalid(f.name) && "border-destructive focus-visible:ring-destructive/20")}
+                      value={(values[f.name] as string) ?? ""}
+                      onChange={handleChange} onBlur={handleBlur}
+                    />
+                  )}
+                  <FieldError error={invalid(f.name) as string} />
+                </div>
+              );
               return (
-                <Form className="grid gap-4 sm:grid-cols-2">
-                  {config.fields.map((f) => (
-                    <div key={f.name} className={f.type === "textarea" ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
-                      <Label htmlFor={f.name}>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
-                      {f.type === "select" ? (
-                        <Select
-                          value={(values[f.name] as string) ?? ""}
-                          onValueChange={(v) => { setFieldValue(f.name, v); setFieldTouched(f.name, true); }}
-                        >
-                          <SelectTrigger className={cn(invalid(f.name) && "border-destructive ring-destructive/20")}><SelectValue placeholder="Select…" /></SelectTrigger>
-                          <SelectContent>
-                            {f.options?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      ) : f.type === "textarea" ? (
-                        <textarea
-                          id={f.name} name={f.name}
-                          className={cn("flex min-h-[72px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", invalid(f.name) && "border-destructive focus-visible:ring-destructive/20")}
-                          value={(values[f.name] as string) ?? ""}
-                          onChange={handleChange} onBlur={handleBlur}
-                        />
-                      ) : (
-                        <Input
-                          id={f.name} name={f.name}
-                          type={f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "date" ? "date" : "text"}
-                          placeholder={f.placeholder}
-                          className={cn(invalid(f.name) && "border-destructive focus-visible:ring-destructive/20")}
-                          value={(values[f.name] as string) ?? ""}
-                          onChange={handleChange} onBlur={handleBlur}
-                        />
-                      )}
-                      <FieldError error={invalid(f.name) as string} />
+                <Form className="space-y-5 pt-1">
+                  {sections.map((sec) => (
+                    <div key={sec || "_default"} className="space-y-3">
+                      {sec && <div className="border-b pb-1.5 text-sm font-bold text-primary">{sec}</div>}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {config.fields.filter((f) => (f.section || "") === sec).map(renderField)}
+                      </div>
                     </div>
                   ))}
-                  <DialogFooter className="sm:col-span-2">
+                  <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>Cancel</Button>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}

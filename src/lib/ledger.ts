@@ -36,11 +36,12 @@ export function naturalBalance(b: Bal | undefined, nature: Nature): number {
 }
 
 export async function computeLedger(): Promise<LedgerData> {
-  const [items, si, pi, pos, cr, cp, sr, pr, add, red] = await Promise.all([
+  const [items, si, pi, pos, cr, cp, sr, pr, add, red, ob] = await Promise.all([
     listDocs("items"), listDocs("sale_invoices"), listDocs("purchase_invoices"),
     listDocs("pos_sales"), listDocs("cash_receipts"), listDocs("cash_payments"),
     listDocs("sale_returns"), listDocs("purchase_returns"),
     listDocs("stock_additions"), listDocs("stock_reductions"),
+    listDocs("opening_balances"),
   ]);
 
   const cost = new Map(items.map((i) => [i.name, Number(i.purchasePrice || 0)]));
@@ -87,6 +88,12 @@ export async function computeLedger(): Promise<LedgerData> {
   });
   add.forEach((d) => (d.lines || []).forEach((l: any) => stIn(l.item, Number(l.qty) || 0)));
   red.forEach((d) => (d.lines || []).forEach((l: any) => stOut(l.item, Number(l.qty) || 0)));
+
+  // opening balances (entered in Maintain → Opening Balances)
+  ob.forEach((o) => {
+    if (Number(o.debit)) dr(o.account, Number(o.debit));
+    if (Number(o.credit)) ccr(o.account, Number(o.credit));
+  });
 
   return { balances, stock, items };
 }
