@@ -17,6 +17,8 @@ const Auth = lazy(() => import("@/pages/Auth"));
 const POS = lazy(() => import("@/pages/POS"));
 const UsersRoles = lazy(() => import("@/pages/UsersRoles"));
 const ChartOfAccounts = lazy(() => import("@/pages/ChartOfAccounts"));
+const InventoryBalances = lazy(() => import("@/pages/reports/InventoryBalances"));
+const TrialBalance = lazy(() => import("@/pages/reports/TrialBalance"));
 const CompanySettings = lazy(() => import("@/pages/settings/CompanySettings"));
 const FinancialYear = lazy(() => import("@/pages/settings/FinancialYear"));
 const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"));
@@ -31,6 +33,9 @@ function resolve(leaf: NavLeaf) {
   if (path === "/settings/documents") return <DocumentSettings />;
   if (masterConfigs[path]) return <CrudPage config={masterConfigs[path]} />;
   if (docConfigs[path]) return <DocumentPage config={docConfigs[path]} />;
+  if (path === "/reports/inventory-balances") return <InventoryBalances />;
+  if (path === "/reports/low-stock-alert") return <InventoryBalances lowStockOnly />;
+  if (path === "/reports/trial-balance") return <TrialBalance />;
   if (path.startsWith("/reports/")) return <ReportPage title={label} />;
   if (path.startsWith("/settings/")) return <SettingsPage path={path} title={label} />;
   return <GenericModule title={label} />;

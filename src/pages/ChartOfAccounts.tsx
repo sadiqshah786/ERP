@@ -13,7 +13,13 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/toast";
 import { Doc, subscribe, createDoc, updateDocById, deleteDocById } from "@/lib/store";
 import { COA, CoaType, CoaNode, Nature, typeColors } from "@/lib/coa";
+import { computeLedger, naturalBalance, Bal } from "@/lib/ledger";
 import { cn, formatCurrency } from "@/lib/utils";
+
+function calcBalance(node: RNode, balances: Map<string, Bal>, nature: Nature): number {
+  if (node.postable) return naturalBalance(balances.get(node.name), nature);
+  return (node.children || []).reduce((s, c) => s + calcBalance(c, balances, nature), 0);
+}
 
 interface RNode extends CoaNode {
   _linked?: "customer" | "vendor" | "bank";
@@ -36,6 +42,7 @@ export default function ChartOfAccounts() {
   const [vendors, setVendors] = useState<Doc[]>([]);
   const [banks, setBanks] = useState<Doc[]>([]);
   const [custom, setCustom] = useState<Doc[]>([]);
+  const [balances, setBalances] = useState<Map<string, Bal>>(new Map());
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const s = new Set<string>(["1"]);
@@ -52,6 +59,7 @@ export default function ChartOfAccounts() {
   useEffect(() => subscribe("vendors", setVendors), []);
   useEffect(() => subscribe("banks", setBanks), []);
   useEffect(() => subscribe("coa_custom", setCustom), []);
+  useEffect(() => { computeLedger().then((r) => setBalances(r.balances)).catch(() => {}); }, [customers, vendors, banks]);
 
   // Build the runtime tree: defaults + injected customers/vendors + custom accounts.
   const tree: RType[] = useMemo(() => {
@@ -173,6 +181,7 @@ export default function ChartOfAccounts() {
           const visibleGroups = q ? t.groups.filter(nodeMatches) : t.groups;
           if (q && visibleGroups.length === 0 && !t.label.toLowerCase().includes(q)) return null;
           const acctCount = (() => { let n = 0; t.groups.forEach(function w(x: RNode){ n++; x.children?.forEach(w); }); return n; })();
+          const typeBal = t.groups.reduce((s, g) => s + calcBalance(g, balances, t.nature), 0);
           return (
             <div key={t.key} className="overflow-hidden rounded-2xl border bg-card card-shadow">
               <button onClick={() => toggle(t.key)} className={cn("flex w-full items-center gap-3 px-5 py-4 text-left", c.head)}>
@@ -182,11 +191,11 @@ export default function ChartOfAccounts() {
                   <div className={cn("font-bold", c.text)}>{t.label}</div>
                   <div className="text-xs text-muted-foreground">{acctCount} accounts</div>
                 </div>
-                <div className={cn("font-bold", c.text)}>{formatCurrency(0)}</div>
+                <div className={cn("font-bold", c.text)}>{formatCurrency(typeBal)}</div>
               </button>
               {open && (
                 <div className="divide-y">
-                  {visibleGroups.map((g) => <NodeRow key={g.code} node={g} depth={0} {...{ expanded, toggle, q, nodeMatches, openAdd, openEditCustom, setToDelete, nature: t.nature }} />)}
+                  {visibleGroups.map((g) => <NodeRow key={g.code} node={g} depth={0} {...{ expanded, toggle, q, nodeMatches, openAdd, openEditCustom, setToDelete, nature: t.nature, balances }} />)}
                 </div>
               )}
             </div>
@@ -244,11 +253,11 @@ interface RowProps {
   expanded: Set<string>; toggle: (c: string) => void; q: string;
   nodeMatches: (n: RNode) => boolean;
   openAdd: (n: RNode) => void; openEditCustom: (n: RNode, p: RNode) => void;
-  setToDelete: (n: RNode) => void; nature: Nature;
+  setToDelete: (n: RNode) => void; nature: Nature; balances: Map<string, Bal>;
 }
 
 function NodeRow(props: RowProps) {
-  const { node, depth, parent, expanded, toggle, q, nodeMatches, openAdd, openEditCustom, setToDelete, nature } = props;
+  const { node, depth, parent, expanded, toggle, q, nodeMatches, openAdd, openEditCustom, setToDelete, nature, balances } = props;
   const indent = 16 + depth * 22;
   const hasChildren = !!node.children?.length || node.link;
 
@@ -265,7 +274,7 @@ function NodeRow(props: RowProps) {
         {!node._customId && !node._linked && <Lock className="h-3 w-3 text-muted-foreground" />}
         <div className="ml-auto flex items-center gap-3">
           <Badge variant="outline" className="text-[10px]">{nature}</Badge>
-          <span className="text-sm text-muted-foreground">{formatCurrency(0)}</span>
+          <span className="text-sm font-medium">{formatCurrency(calcBalance(node, balances, nature))}</span>
           {node._customId ? (
             <>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => parent && openEditCustom(node, parent)}><Pencil className="h-3.5 w-3.5" /></Button>
