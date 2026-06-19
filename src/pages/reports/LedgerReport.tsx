@@ -40,24 +40,35 @@ export default function LedgerReport() {
   const selected = accounts.find((a) => a.name === account);
   const nature = selected?.nature ?? "Asset";
 
-  const rows = useMemo(() => {
-    if (!account) return [];
-    let r = lines.filter((l) => l.account === account);
-    if (from) r = r.filter((l) => !l.date || l.date >= from);
-    if (to) r = r.filter((l) => !l.date || l.date <= to);
-    let bal = 0;
-    return r.map((l) => { bal += delta(nature, l.debit, l.credit); return { ...l, balance: bal }; });
+  const { rows, opening } = useMemo(() => {
+    if (!account) return { rows: [] as (JournalLine & { balance: number; narration: string })[], opening: 0 };
+    const all = lines.filter((l) => l.account === account);
+    let op = 0;
+    if (from) all.forEach((l) => { if (l.date && l.date < from) op += delta(nature, l.debit, l.credit); });
+    const period = all.filter((l) => (!from || !l.date || l.date >= from) && (!to || !l.date || l.date <= to));
+    let bal = op;
+    const r = period.map((l) => {
+      bal += delta(nature, l.debit, l.credit);
+      return { ...l, balance: bal, narration: `${l.type}${l.ref ? " · " + l.ref : ""}` };
+    });
+    return { rows: r, opening: op };
   }, [lines, account, from, to, nature]);
 
   const totalDr = rows.reduce((s, r) => s + r.debit, 0);
   const totalCr = rows.reduce((s, r) => s + r.credit, 0);
-  const closing = rows.length ? rows[rows.length - 1].balance : 0;
+  const closing = rows.length ? rows[rows.length - 1].balance : opening;
+  const fmtBal = (n: number) => `${formatCurrency(Math.abs(n))} ${n >= 0 ? "Dr" : "Cr"}`;
 
-  const exportCsv = () => exportToCsv(`ledger-${account || "report"}`,
-    rows.map((r) => ({ Date: r.date, Ref: r.ref, Type: r.type, Debit: r.debit, Credit: r.credit, Balance: r.balance })));
+  const exportCsv = () => exportToCsv(`ledger-${account || "report"}`, [
+    { Date: "", Narration: "Opening Balance", Debit: "", Credit: "", Balance: fmtBal(opening) },
+    ...rows.map((r) => ({ Date: r.date, Narration: r.narration, Debit: r.debit || "", Credit: r.credit || "", Balance: fmtBal(r.balance) })),
+  ]);
   const print = () => printTable(`Ledger — ${account}`,
-    [{ key: "date", label: "Date" }, { key: "ref", label: "Ref" }, { key: "type", label: "Type" }, { key: "debit", label: "Debit" }, { key: "credit", label: "Credit" }, { key: "balance", label: "Balance" }],
-    rows.map((r) => ({ ...r, debit: r.debit ? formatCurrency(r.debit) : "", credit: r.credit ? formatCurrency(r.credit) : "", balance: formatCurrency(r.balance) })) as any);
+    [{ key: "date", label: "Date" }, { key: "narration", label: "Narration" }, { key: "debit", label: "Debit" }, { key: "credit", label: "Credit" }, { key: "balance", label: "Balance" }],
+    [
+      { date: "", narration: "Opening Balance", debit: "", credit: "", balance: fmtBal(opening) },
+      ...rows.map((r) => ({ date: r.date ? formatDate(r.date) : "", narration: r.narration, debit: r.debit ? formatCurrency(r.debit) : "", credit: r.credit ? formatCurrency(r.credit) : "", balance: fmtBal(r.balance) })),
+    ] as any);
 
   return (
     <div className="space-y-4">
@@ -99,32 +110,44 @@ export default function LedgerReport() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead><TableHead>Ref</TableHead><TableHead>Type</TableHead>
+              <TableHead>Date</TableHead><TableHead>Narration</TableHead>
               <TableHead className="text-right">Debit</TableHead><TableHead className="text-right">Credit</TableHead><TableHead className="text-right">Balance</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
             ) : !account ? (
-              <TableRow><TableCell colSpan={6}>
+              <TableRow><TableCell colSpan={5}>
                 <div className="grid place-items-center gap-2 py-14 text-muted-foreground">
                   <BookText className="h-9 w-9" /><p className="text-sm">Select an account above to view its ledger.</p>
                 </div>
               </TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-14 text-center text-muted-foreground">No transactions for this account in the selected period.</TableCell></TableRow>
             ) : (
-              rows.map((r, i) => (
-                <TableRow key={i}>
-                  <TableCell className="whitespace-nowrap text-sm">{r.date ? formatDate(r.date) : "—"}</TableCell>
-                  <TableCell className="font-mono text-xs">{r.ref || "—"}</TableCell>
-                  <TableCell><Badge variant="secondary" className="text-[10px]">{r.type}</Badge></TableCell>
-                  <TableCell className="text-right">{r.debit ? formatCurrency(r.debit) : "—"}</TableCell>
-                  <TableCell className="text-right">{r.credit ? formatCurrency(r.credit) : "—"}</TableCell>
-                  <TableCell className="text-right font-semibold">{formatCurrency(Math.abs(r.balance))} {r.balance >= 0 ? "Dr" : "Cr"}</TableCell>
+              <>
+                <TableRow className="bg-muted/40">
+                  <TableCell className="text-sm">{from ? formatDate(from) : "—"}</TableCell>
+                  <TableCell className="font-semibold italic">Opening Balance</TableCell>
+                  <TableCell className="text-right">—</TableCell>
+                  <TableCell className="text-right">—</TableCell>
+                  <TableCell className="text-right font-semibold">{fmtBal(opening)}</TableCell>
                 </TableRow>
-              ))
+                {rows.map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="whitespace-nowrap text-sm">{r.date ? formatDate(r.date) : "—"}</TableCell>
+                    <TableCell><span className="font-medium">{r.type}</span>{r.ref && <span className="ml-1 font-mono text-xs text-muted-foreground">· {r.ref}</span>}</TableCell>
+                    <TableCell className="text-right">{r.debit ? formatCurrency(r.debit) : "—"}</TableCell>
+                    <TableCell className="text-right">{r.credit ? formatCurrency(r.credit) : "—"}</TableCell>
+                    <TableCell className="text-right font-semibold">{fmtBal(r.balance)}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="border-t-2 font-extrabold">
+                  <TableCell colSpan={2}>Closing Balance</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totalDr)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totalCr)}</TableCell>
+                  <TableCell className="text-right text-primary">{fmtBal(closing)}</TableCell>
+                </TableRow>
+              </>
             )}
           </TableBody>
         </Table>
