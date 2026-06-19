@@ -21,6 +21,7 @@ const OpeningBalances = lazy(() => import("@/pages/OpeningBalances"));
 const InventoryBalances = lazy(() => import("@/pages/reports/InventoryBalances"));
 const TrialBalance = lazy(() => import("@/pages/reports/TrialBalance"));
 const JournalReport = lazy(() => import("@/pages/reports/JournalReport"));
+const LedgerReport = lazy(() => import("@/pages/reports/LedgerReport"));
 const CompanySettings = lazy(() => import("@/pages/settings/CompanySettings"));
 const FinancialYear = lazy(() => import("@/pages/settings/FinancialYear"));
 const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"));
@@ -37,6 +38,7 @@ function resolve(leaf: NavLeaf) {
   if (masterConfigs[path]) return <CrudPage config={masterConfigs[path]} />;
   if (docConfigs[path]) return <DocumentPage config={docConfigs[path]} />;
   if (path === "/reports/journal") return <JournalReport />;
+  if (path === "/reports/ledger") return <LedgerReport />;
   if (path === "/reports/inventory-balances") return <InventoryBalances />;
   if (path === "/reports/low-stock-alert") return <InventoryBalances lowStockOnly />;
   if (path === "/reports/trial-balance") return <TrialBalance />;
