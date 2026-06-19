@@ -25,6 +25,7 @@ const LedgerReport = lazy(() => import("@/pages/reports/LedgerReport"));
 const CompanySettings = lazy(() => import("@/pages/settings/CompanySettings"));
 const FinancialYear = lazy(() => import("@/pages/settings/FinancialYear"));
 const DocumentSettings = lazy(() => import("@/pages/settings/DocumentSettings"));
+const InventorySettings = lazy(() => import("@/pages/settings/InventorySettings"));
 
 function resolve(leaf: NavLeaf) {
   const { path, label } = leaf;
@@ -35,6 +36,7 @@ function resolve(leaf: NavLeaf) {
   if (path === "/settings/company") return <CompanySettings />;
   if (path === "/settings/financial-year") return <FinancialYear />;
   if (path === "/settings/documents") return <DocumentSettings />;
+  if (path === "/settings/inventory-movement") return <InventorySettings />;
   if (masterConfigs[path]) return <CrudPage config={masterConfigs[path]} />;
   if (docConfigs[path]) return <DocumentPage config={docConfigs[path]} />;
   if (path === "/reports/journal") return <JournalReport />;

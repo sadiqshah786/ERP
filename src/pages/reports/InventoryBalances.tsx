@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { computeLedger, itemStockRows, ItemStockRow } from "@/lib/ledger";
+import { getCostMethod, COST_METHOD_LABEL } from "@/lib/costing";
 import { exportToCsv } from "@/lib/export";
 import { printTable } from "@/lib/print";
 import { formatCurrency } from "@/lib/utils";
@@ -42,9 +43,12 @@ export default function InventoryBalances({ lowStockOnly = false }: { lowStockOn
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold">{title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold">{title}</h2>
+            {!lowStockOnly && <Badge variant="secondary">{COST_METHOD_LABEL[getCostMethod()]}</Badge>}
+          </div>
           <p className="text-sm text-muted-foreground">
-            {lowStockOnly ? "Items at or below their reorder level — computed live from stock movements." : "Live stock per item, derived from purchases, sales, POS and stock adjustments."}
+            {lowStockOnly ? "Items at or below their reorder level — computed live from stock movements." : "Live stock per item, valued by the selected costing method (Settings → Inventory Movement)."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -72,14 +76,15 @@ export default function InventoryBalances({ lowStockOnly = false }: { lowStockOn
               <TableHead className="text-right">In</TableHead>
               <TableHead className="text-right">Out</TableHead>
               <TableHead className="text-right">Balance</TableHead>
+              <TableHead className="text-right">Unit Cost</TableHead>
               <TableHead className="text-right">Value</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="py-10 text-center text-muted-foreground">Loading…</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8}>
+              <TableRow><TableCell colSpan={9}>
                 <div className="grid place-items-center gap-2 py-12 text-muted-foreground">
                   <Boxes className="h-8 w-8" />
                   <p className="text-sm">{lowStockOnly ? "No items below reorder level. 🎉" : "No items yet. Add items in Maintain → Items/Products."}</p>
@@ -101,7 +106,8 @@ export default function InventoryBalances({ lowStockOnly = false }: { lowStockOn
                       {r.balance}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">{formatCurrency(r.value)}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{formatCurrency(r.rate)}</TableCell>
+                  <TableCell className="text-right font-semibold">{formatCurrency(r.value)}</TableCell>
                 </TableRow>
               );
             })}
