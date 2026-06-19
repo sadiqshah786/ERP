@@ -98,6 +98,63 @@ export async function computeLedger(): Promise<LedgerData> {
   return { balances, stock, items };
 }
 
+export interface JournalLine {
+  date: string; ref: string; type: string; account: string; debit: number; credit: number;
+}
+
+// Flat list of every posting line (the journal / day book).
+export async function computeJournal(): Promise<JournalLine[]> {
+  const [items, si, pi, pos, cr, cp, sr, pr, ob] = await Promise.all([
+    listDocs("items"), listDocs("sale_invoices"), listDocs("purchase_invoices"),
+    listDocs("pos_sales"), listDocs("cash_receipts"), listDocs("cash_payments"),
+    listDocs("sale_returns"), listDocs("purchase_returns"), listDocs("opening_balances"),
+  ]);
+  const cost = new Map(items.map((i) => [i.name, Number(i.purchasePrice || 0)]));
+  const lineCost = (lines: any[] = []) => lines.reduce((s, l) => s + (Number(l.qty) || 0) * (cost.get(l.item) || 0), 0);
+  const num = (d: Doc) => Number(d.total ?? d.amount ?? 0);
+  const out: JournalLine[] = [];
+  const push = (date: string, ref: string, type: string, account: string, debit: number, credit: number) => {
+    if (!debit && !credit) return;
+    out.push({ date: date || "", ref: ref || "", type, account, debit, credit });
+  };
+
+  si.forEach((d) => { const t = num(d), c = lineCost(d.lines);
+    push(d.date, d.number, "Sale Invoice", `Customer: ${d.party}`, t, 0);
+    push(d.date, d.number, "Sale Invoice", "Sales Revenue", 0, t);
+    push(d.date, d.number, "Sale Invoice", "Cost of Goods Sold", c, 0);
+    push(d.date, d.number, "Sale Invoice", "Inventory Control", 0, c);
+  });
+  pos.forEach((d) => { const t = num(d), c = lineCost(d.lines);
+    push(d.date, d.number, "POS Sale", "Cash in Hand", t, 0);
+    push(d.date, d.number, "POS Sale", "Sales Revenue", 0, t);
+    push(d.date, d.number, "POS Sale", "Cost of Goods Sold", c, 0);
+    push(d.date, d.number, "POS Sale", "Inventory Control", 0, c);
+  });
+  pi.forEach((d) => { const t = num(d);
+    push(d.date, d.number, "Purchase Invoice", "Inventory Control", t, 0);
+    push(d.date, d.number, "Purchase Invoice", `Vendor: ${d.party}`, 0, t);
+  });
+  cr.forEach((d) => { const t = num(d);
+    push(d.date, d.number, "Cash Receipt", "Cash in Hand", t, 0);
+    push(d.date, d.number, "Cash Receipt", `Customer: ${d.party}`, 0, t);
+  });
+  cp.forEach((d) => { const t = num(d);
+    push(d.date, d.number, "Cash Payment", `Vendor: ${d.party}`, t, 0);
+    push(d.date, d.number, "Cash Payment", "Cash in Hand", 0, t);
+  });
+  sr.forEach((d) => { const t = num(d);
+    push(d.date, d.number, "Sale Return", "Sales Revenue", t, 0);
+    push(d.date, d.number, "Sale Return", `Customer: ${d.party}`, 0, t);
+  });
+  pr.forEach((d) => { const t = num(d);
+    push(d.date, d.number, "Purchase Return", `Vendor: ${d.party}`, t, 0);
+    push(d.date, d.number, "Purchase Return", "Inventory Control", 0, t);
+  });
+  ob.forEach((o) => push((o as any).fy ? "" : "", "OB", "Opening Balance", o.account, Number(o.debit || 0), Number(o.credit || 0)));
+
+  return out.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+}
+
 export interface ItemStockRow {
   code: string; name: string; unit: string; category: string;
   opening: number; in: number; out: number; balance: number;
