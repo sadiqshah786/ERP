@@ -18,6 +18,7 @@ const POS = lazy(() => import("@/pages/POS"));
 const UsersRoles = lazy(() => import("@/pages/UsersRoles"));
 const ChartOfAccounts = lazy(() => import("@/pages/ChartOfAccounts"));
 const OpeningBalances = lazy(() => import("@/pages/OpeningBalances"));
+const Customers = lazy(() => import("@/pages/master/Customers"));
 const InventoryBalances = lazy(() => import("@/pages/reports/InventoryBalances"));
 const TrialBalance = lazy(() => import("@/pages/reports/TrialBalance"));
 const JournalReport = lazy(() => import("@/pages/reports/JournalReport"));
@@ -32,6 +33,7 @@ function resolve(leaf: NavLeaf) {
   if (path === "/pos") return <POS />;
   if (path === "/master/chart-of-accounts") return <ChartOfAccounts />;
   if (path === "/master/opening-balances") return <OpeningBalances />;
+  if (path === "/master/customers") return <Customers />;
   if (path === "/settings/users") return <UsersRoles />;
   if (path === "/settings/company") return <CompanySettings />;
   if (path === "/settings/financial-year") return <FinancialYear />;
