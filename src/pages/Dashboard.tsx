@@ -210,7 +210,7 @@ export default function Dashboard() {
 
           <div className="mt-5">
             <p className="mb-2 text-sm font-semibold">💰 Working Capital</p>
-            <div className="rounded-xl bg-gradient-to-r from-primary to-[#066a97] p-5 text-white">
+            <div className="rounded-xl bg-gradient-to-r from-primary to-[#db2777] p-5 text-white">
               <div className="text-2xl font-extrabold">{formatCurrency(0)}</div>
               <div className="text-xs text-white/80">{formatCurrency(0)} vs previous month</div>
             </div>
@@ -299,15 +299,15 @@ export default function Dashboard() {
                   <AreaChart data={flowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(198 90% 41%)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="hsl(198 90% 41%)" stopOpacity={0} />
+                        <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(220 13% 91%)" />
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip />
-                    <Area type="monotone" dataKey="balance" stroke="hsl(198 90% 41%)" fill="url(#g)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="balance" stroke="hsl(25 95% 53%)" fill="url(#g)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

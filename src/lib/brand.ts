@@ -2,12 +2,12 @@
 // Central brand config. Change these to re-skin the whole app.
 // ─────────────────────────────────────────────────────────────
 export const brand = {
-  fullName: "Memon Solutions",
-  shortName: "Memon Solutions",
-  // Wordmark parts (used in text fallbacks / footers)
-  wordmarkPrimary: "MEMON",
-  wordmarkAccent: "SOLUTIONS",
-  tagline: "Pakistan's Complete Accounting & ERP Software",
+  fullName: "SS ERP",
+  shortName: "SS",
+  // Wordmark parts (used in text fallbacks / footers / logo lockup)
+  wordmarkPrimary: "SS",
+  wordmarkAccent: "ERP",
+  tagline: "Complete Accounting & ERP Software",
   description:
     "All-in-one solution for accounting, inventory, POS, invoicing, payroll and more — built for Pakistani businesses",
   modules: [

@@ -4,7 +4,7 @@ import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
   Mail, Lock, User as UserIcon, Briefcase, Eye, EyeOff, ArrowRight, Loader2, RefreshCw, Check,
-  TrendingUp, FileText, BookOpen, Package, ShoppingCart, Users, DollarSign, Layers,
+  TrendingUp, FileText, BookOpen, Package, ShoppingCart, Users, DollarSign, Layers, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/toast";
@@ -134,17 +134,17 @@ export default function Auth({ initial = "signin" }: { initial?: View }) {
   if (loading) return <FullScreenLoader />;
 
   return (
-    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[#06121c] p-4">
+    <div className="relative grid min-h-screen place-items-center overflow-hidden bg-[#1a1118] p-4">
       {/* Animated aurora background */}
-      <div className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#0a8dc7]/40 blur-3xl animate-blob" />
+      <div className="pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#f97316]/40 blur-3xl animate-blob" />
       <div className="pointer-events-none absolute -bottom-48 -right-32 h-[36rem] w-[36rem] rounded-full bg-secondary/30 blur-3xl animate-blob [animation-delay:4s]" />
-      <div className="pointer-events-none absolute left-1/3 top-1/4 h-80 w-80 rounded-full bg-[#13b6e6]/25 blur-3xl animate-blob [animation-delay:8s]" />
+      <div className="pointer-events-none absolute left-1/3 top-1/4 h-80 w-80 rounded-full bg-[#ec4899]/25 blur-3xl animate-blob [animation-delay:8s]" />
 
       <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-[1.75rem] border border-white/15 bg-white shadow-2xl animate-fade-in lg:grid-cols-2">
         <ShowcasePanel view={view} />
 
         {/* Form column */}
-        <div className="flex flex-col justify-center p-7 sm:p-10">
+        <div className="flex flex-col justify-center p-7 sm:p-10 lg:order-first">
           <div className="mb-6 lg:hidden"><Logo variant="color" size={40} /></div>
           {(view === "signup" || view === "verify") && <AuthStepper step={view === "verify" ? 2 : 1} />}
 
@@ -335,14 +335,19 @@ function ShowcasePanel({ view }: { view: View }) {
       <div className="pointer-events-none absolute -right-10 top-8 h-44 w-44 rounded-full bg-white/10 blur-2xl animate-blob" />
       <div className="pointer-events-none absolute -left-8 bottom-12 h-52 w-52 rounded-full bg-secondary/30 blur-3xl animate-blob [animation-delay:5s]" />
 
-      <Logo variant="light" size={44} />
+      <div className="relative z-10 flex flex-col gap-4">
+        <Logo variant="light" size={44} />
+        <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20 backdrop-blur-sm">
+          <Sparkles className="h-3.5 w-3.5" /> Cloud ERP · Accounting · Inventory · POS
+        </span>
+      </div>
 
       {isSignup ? (
         /* SIGNUP — "what we provide" modules showcase */
         <div className="relative z-10">
           <p className="text-sm text-white/70">Complete Business Management</p>
           <h2 className="mt-1 text-3xl font-extrabold leading-tight">
-            Accounting <span className="bg-gradient-to-r from-white to-[#d6f5a3] bg-clip-text text-transparent">&amp; ERP</span> Software
+            Accounting <span className="bg-gradient-to-r from-white to-[#fed7aa] bg-clip-text text-transparent">&amp; ERP</span> Software
           </h2>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/75">{brand.description}</p>
 
@@ -363,7 +368,7 @@ function ShowcasePanel({ view }: { view: View }) {
         <div className="relative z-10">
           <h2 className="text-4xl font-extrabold leading-[1.1]">
             Run your business,<br />
-            <span className="bg-gradient-to-r from-white to-[#d6f5a3] bg-clip-text text-transparent">beautifully.</span>
+            <span className="bg-gradient-to-r from-white to-[#fed7aa] bg-clip-text text-transparent">beautifully.</span>
           </h2>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/75">{brand.description}</p>
           <div className="mt-7 space-y-3">
@@ -406,7 +411,7 @@ function AuthStepper({ step }: { step: 1 | 2 }) {
             <div className="flex items-center gap-2">
               <div className={cn(
                 "grid h-8 w-8 place-items-center rounded-full text-sm font-bold transition-colors",
-                done ? "bg-secondary text-[#0a3a52]" : active ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
+                done ? "bg-secondary text-white" : active ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
               )}>
                 {done ? <Check className="h-4 w-4" /> : s.n}
               </div>
@@ -434,7 +439,7 @@ function SubmitButton({ busy, children, onClick }: { busy: boolean; children: Re
       type={onClick ? "button" : "submit"}
       onClick={onClick}
       disabled={busy}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#066a97] text-sm font-bold text-white shadow-lg shadow-primary/30 transition hover:opacity-95 disabled:opacity-70"
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#db2777] text-sm font-bold text-white shadow-lg shadow-primary/30 transition hover:opacity-95 disabled:opacity-70"
     >
       {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : children}
     </button>

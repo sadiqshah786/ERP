@@ -6,9 +6,9 @@ import type { Doc } from "./store";
 const baseStyles = `
   * { box-sizing: border-box; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
   body { margin: 0; padding: 32px; color: #1f2937; }
-  .head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0a8dc7; padding-bottom:16px; margin-bottom:24px; }
+  .head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #f97316; padding-bottom:16px; margin-bottom:24px; }
   .brand { font-size:26px; font-weight:900; }
-  .brand .a { color:#0a8dc7; } .brand .b { color:#9ed24d; }
+  .brand .a { color:#f97316; } .brand .b { color:#ec4899; }
   .muted { color:#6b7280; font-size:12px; }
   h1 { font-size:20px; margin:0 0 4px; }
   .meta { text-align:right; font-size:13px; }
@@ -17,7 +17,7 @@ const baseStyles = `
   .box { border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
   .box .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#9ca3af; margin-bottom:4px; }
   table { width:100%; border-collapse:collapse; margin-top:8px; }
-  th { background:#0a8dc7; color:#fff; text-align:left; padding:10px; font-size:12px; }
+  th { background:#f97316; color:#fff; text-align:left; padding:10px; font-size:12px; }
   th.r, td.r { text-align:right; }
   td { padding:10px; border-bottom:1px solid #eee; font-size:13px; }
   .totals { margin-top:16px; margin-left:auto; width:280px; }
