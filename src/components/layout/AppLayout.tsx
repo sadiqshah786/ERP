@@ -13,7 +13,7 @@ export function AppLayout() {
   const title = useMemo(() => {
     if (location.pathname === "/") return "Dashboard";
     const match = allRoutes().find((r) => location.pathname.startsWith(r.path));
-    return match?.label ?? "SS ERP";
+    return match?.label ?? "Memon Solution ERP";
   }, [location.pathname]);
 
   const subtitle = location.pathname === "/" ? "Last updated: just now" : undefined;

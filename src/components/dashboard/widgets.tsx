@@ -54,7 +54,7 @@ export function MiniGauge({ value, target, title, subtitle, ok }: {
   );
 }
 
-export function StatBar({ label, value, color = "hsl(25 95% 53%)" }: { label: string; value: number; color?: string }) {
+export function StatBar({ label, value, color = "hsl(198 90% 41%)" }: { label: string; value: number; color?: string }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">

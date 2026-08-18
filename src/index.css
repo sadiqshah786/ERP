@@ -11,30 +11,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* SS ERP brand — warm orange #f97316 → pink #ec4899 */
-    --primary: 25 95% 53%;
+    /* Memon Solutions brand — primary #0a8dc7 (blue), secondary #9ed24d (green) */
+    --primary: 198 90% 41%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 81% 60%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 24 16% 95%;
-    --muted-foreground: 24 8% 46%;
-    --accent: 28 100% 95%;
-    --accent-foreground: 22 90% 42%;
+    --secondary: 84 60% 56%;
+    --secondary-foreground: 95 40% 16%;
+    --muted: 210 16% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 198 78% 94%;
+    --accent-foreground: 198 90% 32%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 42%;
+    --success: 84 60% 45%;
     --warning: 38 92% 50%;
 
-    --border: 24 16% 90%;
-    --input: 24 16% 90%;
-    --ring: 25 95% 53%;
+    --border: 214 18% 90%;
+    --input: 214 18% 90%;
+    --ring: 198 90% 41%;
 
-    /* Dark charcoal sidebar — lets the warm accents pop */
-    --sidebar: 228 16% 14%;
-    --sidebar-foreground: 230 12% 72%;
-    --sidebar-accent: 25 95% 53%;
+    /* Sidebar uses the primary blue */
+    --sidebar: 198 89% 40%;
+    --sidebar-foreground: 200 100% 92%;
+    --sidebar-accent: 201 96% 27%;
 
     --radius: 1rem;
   }
@@ -47,29 +47,29 @@
     --popover: 222 28% 11%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 25 95% 57%;
+    --primary: 198 88% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 78% 60%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 222 16% 16%;
-    --muted-foreground: 220 12% 62%;
-    --accent: 24 55% 24%;
-    --accent-foreground: 28 100% 82%;
+    --secondary: 84 35% 30%;
+    --secondary-foreground: 84 55% 85%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 215 16% 62%;
+    --accent: 198 60% 22%;
+    --accent-foreground: 198 80% 82%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 46%;
+    --success: 84 55% 50%;
     --warning: 38 92% 55%;
 
-    --border: 222 16% 22%;
-    --input: 222 16% 22%;
-    --ring: 25 95% 57%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
+    --ring: 198 88% 48%;
 
-    /* Charcoal sidebar in dark mode */
-    --sidebar: 228 16% 11%;
-    --sidebar-foreground: 230 12% 70%;
-    --sidebar-accent: 25 92% 52%;
+    /* Deeper blue sidebar in dark mode */
+    --sidebar: 202 72% 16%;
+    --sidebar-foreground: 200 40% 80%;
+    --sidebar-accent: 198 82% 34%;
   }
 
   * { @apply border-border; }
@@ -82,14 +82,14 @@
     /* soft ambient background tint with brand-coloured glows */
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(60rem 60rem at 110% -10%, hsl(25 95% 53% / 0.08), transparent 60%),
-      radial-gradient(45rem 45rem at -10% 110%, hsl(330 81% 60% / 0.07), transparent 55%);
+      radial-gradient(60rem 60rem at 110% -10%, hsl(198 90% 41% / 0.07), transparent 60%),
+      radial-gradient(45rem 45rem at -10% 110%, hsl(84 60% 56% / 0.08), transparent 55%);
     background-attachment: fixed;
   }
   .dark body {
     background-image:
-      radial-gradient(60rem 60rem at 110% -10%, hsl(25 95% 53% / 0.14), transparent 60%),
-      radial-gradient(45rem 45rem at -10% 110%, hsl(330 81% 60% / 0.10), transparent 55%);
+      radial-gradient(60rem 60rem at 110% -10%, hsl(198 90% 41% / 0.12), transparent 60%),
+      radial-gradient(45rem 45rem at -10% 110%, hsl(84 60% 56% / 0.08), transparent 55%);
   }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { @apply rounded-full; background: hsl(var(--muted-foreground) / 0.3); }
@@ -116,10 +116,10 @@
   }
   /* hero mesh gradient */
   .hero-mesh {
-    background-color: hsl(24 94% 53%);
+    background-color: hsl(198 89% 38%);
     background-image:
-      radial-gradient(45rem 45rem at 100% 120%, hsl(330 85% 55% / 0.92), transparent 55%),
-      radial-gradient(40rem 40rem at 0% 0%, hsl(38 100% 60% / 0.55), transparent 55%),
-      radial-gradient(30rem 30rem at 55% 40%, hsl(16 92% 48% / 0.35), transparent 50%);
+      radial-gradient(40rem 40rem at 0% 0%, hsl(84 60% 56% / 0.45), transparent 50%),
+      radial-gradient(40rem 40rem at 100% 120%, hsl(201 96% 22% / 0.9), transparent 55%),
+      radial-gradient(30rem 30rem at 80% -20%, hsl(190 95% 55% / 0.5), transparent 50%);
   }
 }

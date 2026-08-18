@@ -38,7 +38,7 @@ function ModuleChips({ wrap = false }: { wrap?: boolean }) {
 /** Login variant — tagline, modules, stats */
 export function LoginBrandPanel() {
   return (
-    <div className="relative flex flex-col justify-center gap-8 overflow-hidden bg-gradient-to-br from-[#f97316] via-[#f43f5e] to-[#db2777] p-10 text-white lg:p-12">
+    <div className="relative flex flex-col justify-center gap-8 overflow-hidden bg-gradient-to-br from-[#0a8dc7] via-[#0982b8] to-[#055f88] p-10 text-white lg:p-12">
       <Wordmark />
       <div>
         <p className="text-sm text-white/70">Complete Business Management</p>
@@ -70,7 +70,7 @@ export function SignupBrandPanel({ step }: { step: 1 | 2 }) {
     { n: 2, label: "Verification" },
   ];
   return (
-    <div className="relative flex flex-col gap-8 overflow-hidden bg-gradient-to-br from-[#f97316] via-[#f43f5e] to-[#db2777] p-10 text-white lg:p-12">
+    <div className="relative flex flex-col gap-8 overflow-hidden bg-gradient-to-br from-[#0a8dc7] via-[#0982b8] to-[#055f88] p-10 text-white lg:p-12">
       <Wordmark />
       <div>
         <p className="text-sm text-white/70">Start Your Journey to</p>
